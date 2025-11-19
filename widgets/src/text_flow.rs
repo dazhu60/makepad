@@ -621,7 +621,6 @@ impl TextFlow{
         self.items = Some(items);
         r
     }
-        
     
     pub fn item(&mut self, cx: &mut Cx, entry_id: LiveId, template: LiveId) -> WidgetRef {
         if let Some(ptr) = self.templates.get(&template) {

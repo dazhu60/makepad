@@ -25,8 +25,13 @@ live_design!{
                             }
                         }
                         <MyTextFlow> {
-                            width: 100,
-                            height: 700,
+                            MyButton = <Button> {
+                                margin: 0,
+                                text: "Bonjour, le monde!"
+                            }
+
+                            width: 256,
+                            height: 100,
                         }
                     }
                 }
@@ -68,10 +73,19 @@ impl Widget for MyTextFlow {
         walk: Walk,
     ) -> DrawStep {
         self.text_flow.begin(cx, walk);
+        let my_button = self.text_flow.item(cx, id!(my_button), id!(MyButton));
+        my_button.draw_all(cx, &mut Scope::empty());
+        self.text_flow.push_style(Style::FontSize(32.0));
+        self.text_flow.draw_text(cx, "Kanariepiet?");
+        self.text_flow.pop_style();
+        self.text_flow.draw_text(cx, "Nee, Piet ken Arie niet!");
+        self.text_flow.end(cx);
+        /*
         self.text_flow.push_style(Style::FontColor(vec4(1.0, 0.0, 0.0, 1.0)));
         self.text_flow.draw_text(cx, "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. ");
         self.text_flow.push_style(Style::FontColor(vec4(0.0, 1.0, 0.0, 1.0)));
         self.text_flow.draw_text(cx, "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. ");
+        */
         /*
         self.text_flow.push_style(Style::FontSize(32.0));
         self.text_flow.draw_text(cx, "def");
@@ -122,7 +136,6 @@ impl Widget for MyTextFlow {
         self.text_flow.pop_style();
         self.text_flow.pop_style();
         */
-        self.text_flow.end(cx);
         DrawStep::done()
     }
 

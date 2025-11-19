@@ -67,7 +67,7 @@ live_design! {
     }
 }
 
-#[derive(Live, LiveHook, Widget)]
+#[derive(Live, Widget)]
 pub struct TextFlow2 {
     #[live]
     draw_underline: DrawUnderline,
@@ -93,9 +93,23 @@ pub struct TextFlow2 {
     area: Area,
     #[rust]
     styles: StyleStack,
+    #[rust]
+    items: ComponentMap<LiveId,(WidgetRef, LiveId)>,
+    #[rust]
+    templates: ComponentMap<LiveId, LivePtr>,
 }
 
 impl TextFlow2 {
+    pub fn item(&mut self, cx: &mut Cx, item_id: LiveId, template_id: LiveId) -> WidgetRef {
+        if let Some(&template) = self.templates.get(&template_id) {
+            let (item, _) = self.items.get_or_insert(cx, item_id, |cx| {
+                (WidgetRef::new_from_ptr(cx, Some(template)), template_id)
+            });
+            return item.clone();
+        }
+        WidgetRef::empty() 
+    }
+
     pub fn begin(&mut self, cx: &mut Cx2d, walk: Walk) {
         cx.begin_turtle(walk, self.layout);
     }
@@ -173,6 +187,7 @@ impl TextFlow2 {
                     ..laidout_row.clone()
                 }].into(),
             };
+            self.draw_text.debug = true;
             self.draw_text.draw_walk_laidout(cx, Walk::fit(), &laidout_text_for_row);
             if laidout_row.newline {
                 cx.turtle_new_line();
@@ -190,6 +205,30 @@ impl TextFlow2 {
                 self.draw_strikethrough.draw_abs(cx, rect);
             }
         */
+    }
+}
+
+impl LiveHook for TextFlow2 {
+    fn apply_value_instance(&mut self, cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) -> usize {
+        let template_id = nodes[index].id;
+        match apply.from {
+            ApplyFrom::NewFromDoc { file_id } | ApplyFrom::UpdateFromDoc {file_id, ..} => {
+                if nodes[index].origin.has_prop_type(LivePropType::Instance) {
+                    let template = cx.live_registry.borrow().file_id_index_to_live_ptr(file_id, index);
+                    self.templates.insert(template_id, template);
+                    
+                    for (current_item, current_template_id) in self.items.values_mut() {
+                        if *current_template_id == template_id {
+                            current_item.apply(cx, apply, index, nodes);
+                        }
+                    }
+                } else {
+                    cx.apply_error_no_matching_field(live_error_origin!(), index, nodes);
+                }
+            }
+            _ => {}
+        }
+        nodes.skip_node(index)
     }
 }
 
